@@ -1,0 +1,810 @@
+---
+title: "Turismo"
+author: "Arturo Torre"
+date: "3/9/2018"
+output: html_document
+---
+
+## Turismo en México {.tabset .tabset-fade .tabset-pills}
+
+###Contexto General
+```{r,  include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(tidyr)
+library(knitr)
+library(mxmaps)
+library (lubridate)
+
+```
+
+```{r, include=FALSE}
+total <- read.csv(file="Total.csv", header=TRUE, sep=",")
+
+total$Ano <- as.numeric(total$Ano)
+
+total$Turistas <- as.numeric(total$Turistas)
+```
+
+El objetivo del presente es entender la evolución histórica que ha tenido el turismo en México. Primero veamos el número total de turistas en México desde 1991.
+
+```{r, include=FALSE}
+
+p1 <-ggplot(total, aes(x=Ano, y=Turistas)) + geom_bar(stat="identity", fill = "black") +
+    xlab("Año") + ylab("Millones de personas") + stat_smooth(color = "red", fill = "red", method = "loess") +      scale_x_continuous(breaks = c(1991:2017), limits=c(1990, 2018)) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  ggtitle("Turistas Extranjeros Totales") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+```{r}
+p1
+```
+
+Se observa en la gráfica que la tendencia es positiva a lo largo del tiempo. Vemos dos periodos de baja (en 2001-2002 y 2009) que corresponden a las crisis económicas que ha habido en el contexto internacional.
+
+
+```{r, include=FALSE}
+crucero <- read.csv(file="Crucero.csv", header=TRUE, sep=",")
+
+crucero$Ano <- as.numeric(crucero$Ano)
+
+crucero$Visitante.Crucero <- as.numeric(crucero$Visitante.Crucero)
+```
+
+El Instituto Nacional de Migración también ofrece información sobre las personas extranjeras que llegan a México en crucero.
+```{r, include=FALSE}
+p2 <-ggplot(crucero, aes(x=Ano, y=Visitante.Crucero)) + geom_bar(stat="identity", fill = "black") +
+    xlab("Año") + ylab("Millones de personas") + stat_smooth(color = "red", fill = "red", method = "loess") +      scale_x_continuous(breaks = c(1998:2017), limits=c(1997, 2018)) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  ggtitle("Turistas Extranjeros Llegados en Crucero") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+p2
+```
+Se observa que en los últimos años el número de turistas que llegan a México en cruceo ha ido en aumento. Estos pasajeros internacionales no están incluidos en la categoría de turistas extranjeros.
+
+```{r,include=FALSE}
+aero <- read.csv(file="pasajeaero.csv", header=TRUE, sep=",")
+
+aero$Ano <- as.numeric(aero$Ano)
+
+aero$pasajeros <- as.numeric(aero$pasajeros)
+```
+
+También resulta importante revisar el flujo de pasajeros que cada aeropuerto genera. Se toman los aeropuertos de los detinos turísticos más importantes y el de la Ciudad de México como referencia.
+
+```{r,include=FALSE}
+p3 <- ggplot(aero, aes(x = Ano, y = pasajeros)) + 
+  geom_line(aes(color = Aeropuerto), size = 1) +
+  xlab("Año") + ylab("Millones de pasajeros") +
+  scale_x_continuous(breaks = c(2006:2017), limits=c(2005, 2018)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank())+
+  ggtitle("Pasajeros por aeropuerto") +
+  theme(plot.title = element_text(hjust = 0.5))
+  
+```
+
+```{r}
+p3
+```
+
+Claramente Cancún tiene un flujo ampliamente superior al resto.
+
+```{r, include=FALSE}
+
+turi= read.csv(file="turismoplaya.csv", header=TRUE, sep=",")
+
+turi$Ano <- as.numeric(turi$Ano)
+
+turi$turistas <- as.numeric(turi$turistas)
+```
+
+Resulta importante conocer que tantos turistas se registran en destinos de playa. De acuerdo a la información de la secretaría de Turismo tenemos lo siguiente:
+```{r, include=FALSE}
+p4 <- ggplot(turi, aes(x = Ano, y = turistas)) + 
+  geom_line(aes(color = destino), size = 1) +
+  xlab("Año") + ylab("Millones de turistas") +
+  scale_x_continuous(breaks = c(2010:2017), limits=c(2009, 2017)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal")+
+   ggtitle("Turistas por destino de playa") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+```{r, warning=FALSE}
+p4
+```
+
+Cancún y Acapulco liderean la lista de los destinos más populares. Resulta importante el crecimiento de Cancún en los últimos años.
+
+```{r, include=FALSE, warning=FALSE}
+divisas <- read.csv(file="divisas.csv", header=TRUE, sep=",", stringsAsFactors = FALSE)
+
+divisas$millonesdedolares <- as.numeric(divisas$millonesdedolares)
+
+
+divisas$periodo <-  parse_date_time(divisas$periodo, orders = c("Ym"))   #as.Date(divisas$periodo, "%Y-%m")
+```
+
+```{r, include=FALSE}
+p5 <- ggplot(divisas, aes(x = periodo, y = millonesdedolares)) + 
+  geom_line(aes(color = cip), size = 1) +
+  xlab("Año") + ylab("Millones de dólares") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Divisas generdas por turistas") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r, warning=FALSE}
+p5
+```
+
+Se observa claramente que Cancún es el destino con mayor derrama económica entre los destinos de playa.
+
+###Quintana Roo
+
+```{r,include=FALSE}
+qroo <- read.csv(file="Qroo2016.csv", header=TRUE, sep=",")
+
+qroo$Mes <-  parse_date_time(qroo$Mes, orders = c("%m"))
+```
+
+Vamos a observar las características de Quintana Roo en 2016 con información del sistema Datatur
+
+```{r, include=FALSE}
+pq1 <-  ggplot() + 
+  geom_line(data = qroo, aes(x = Mes, y = Cuartos.Ocupados), color = "Black") +
+  xlab('Mes') +
+  ylab('Cuartos Disponibles') +
+  ggtitle("Cuartos Disponibles en Quintana Roo") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+```{r}
+pq1
+```
+
+
+
+```{r, include=FALSE}
+qroo1 <- read.csv(file="Qroo/qroo1.csv", header=TRUE, sep=",")
+
+
+qroo1$Mes <-  parse_date_time(qroo1$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+pq2 <- ggplot(qroo1, aes(x = Mes, y = Cuartos.Ocupados)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Cuartos Ocupados") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Cuartos Ocupados por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+```
+
+
+```{r}
+pq2
+```
+
+La ocupación hotelera en Quintana Roo está claramente dominada por extranjeros
+```{r,include=FALSE}
+
+qroo2 <- read.csv(file="Qroo/qroo2.csv", header=TRUE, sep=",")
+
+
+qroo2$Mes <-  parse_date_time(qroo2$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+pq3 <- ggplot(qroo2, aes(x = Mes, y = Lleagadas)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Número de arrivos") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Llegada de turistas por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+pq3
+```
+
+Los turistas extranjeros son los que más llegadas son los que más llegan a Quintana Roo. Mientras los turístas nacionales tienen su pico en verano, los turistas extranjeros incrementan su presencia durante el invierno.
+
+```{r, include=FALSE}
+qroo3 <- read.csv(file="Qroo/qroo3.csv", header=TRUE, sep=",")
+
+
+qroo3$Mes <-  parse_date_time(qroo3$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+pq4 <- ggplot(qroo3, aes(x = Mes, y = Promedio)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Promedio") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Promedio de noches por tipo de turista por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+pq4
+```
+
+Se observa que el turista extranjero tiene una estadía promedio mayor que el nacional.
+
+###Sinaloa
+
+Vamos a observar las características de Sinaloa en 2016 con información del sistema Datatur.
+
+```{r, include=FALSE}
+sin <- read.csv(file="Sinaloa2016.csv", header=TRUE, sep=",")
+
+sin$Mes <-  parse_date_time(sin$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+sq1 <-  ggplot() + 
+  geom_line(data = sin, aes(x = Mes, y = Cuartos.Ocupados), color = "Black") +
+  xlab('Mes') +
+  ylab('Cuartos Disponibles') +
+  ggtitle("Cuartos Disponibles en Sinaloa") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+```{r}
+sq1
+```
+
+```{r, include=FALSE}
+sin1 <- read.csv(file="Sinaloa/sin1.csv", header=TRUE, sep=",")
+
+
+sin1$Mes <-  parse_date_time(sin1$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+sq2 <- ggplot(sin1, aes(x = Mes, y = Cuartos.Ocupados)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Cuartos Ocupados") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Cuartos Ocupados por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+```
+
+
+```{r}
+sq2
+```
+
+La ocupación hotelera en Sinaloa está claramente dominada por turistas nacionales. De la misma manera que en Quintana Roo, los turistas nacionales incrementan su presencia durante el verano, mientras que los extranjeros lo hacen durante el invierno.
+
+```{r,include=FALSE}
+
+sin2 <- read.csv(file="Sinaloa/sin2.csv", header=TRUE, sep=",")
+
+
+sin2$Mes <-  parse_date_time(sin2$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+sq3 <- ggplot(sin2, aes(x = Mes, y = Llegadas)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Número de arrivos") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Llegada de turistas por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+sq3
+```
+
+Coincidentemente llegan más turistas nacionales que extranjeros
+
+```{r, include=FALSE}
+sin3 <- read.csv(file="Sinaloa/sin3.csv", header=TRUE, sep=",")
+
+
+sin3$Mes <-  parse_date_time(sin3$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+sq4 <- ggplot(sin3, aes(x = Mes, y = Promedio)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Promedio") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Promedio de noches por tipo de turista por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+sq4
+```
+
+Sin embargo, la estadía promedio de los turistas que llegan a Sinaloa es mayor para el grupo extranjero.
+
+###Jalisco
+
+Vamos a observar las características de Jalisco en 2016 con información del sistema Datatur.
+
+```{r, include=FALSE}
+jal <- read.csv(file="Jalisco2016.csv", header=TRUE, sep=",")
+
+jal$Mes <-  parse_date_time(jal$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+jq1 <-  ggplot() + 
+  geom_line(data = jal, aes(x = Mes, y = Cuartos.Ocupados), color = "Black") +
+  xlab('Mes') +
+  ylab('Cuartos Disponibles') +
+  ggtitle("Cuartos Disponibles en Jalisco") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+```{r}
+jq1
+```
+
+
+
+```{r, include=FALSE}
+jal1 <- read.csv(file="Jalisco/jal1.csv", header=TRUE, sep=",")
+
+
+jal1$Mes <-  parse_date_time(jal1$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+jq2 <- ggplot(jal1, aes(x = Mes, y = Cuartos.Ocupados)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Cuartos Ocupados") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Cuartos Ocupados por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+```
+
+
+```{r}
+jq2
+```
+
+La ocupación hotelera en Jalisco está claramente dominada por turistas nacionales.
+
+```{r,include=FALSE}
+
+jal2 <- read.csv(file="Jalisco/jal2.csv", header=TRUE, sep=",")
+
+
+jal2$Mes <-  parse_date_time(jal2$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+jq3 <- ggplot(jal2, aes(x = Mes, y = Llegadas)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Número de arrivos") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Llegada de turistas por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+jq3
+```
+
+Coincidentemente llegan más turistas nacionales que extranjeros.
+
+```{r, include=FALSE}
+jal3 <- read.csv(file="Jalisco/jal3.csv", header=TRUE, sep=",")
+
+
+jal3$Mes <-  parse_date_time(jal3$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+jq4 <- ggplot(jal3, aes(x = Mes, y = Promedio)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Promedio") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Promedio de noches por tipo de turista por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+jq4
+```
+
+Sin embargo, la estadía promedio de los turistas que llegan a Jalisco es mayor para el grupo extranjero. Se nota una tendencia muy marcada de presencia extranjera en los inviernos.
+
+###Baja California Sur
+
+Vamos a observar las características de Baja California Sur en 2016 con información del sistema Datatur.
+
+```{r, include=FALSE}
+bc <- read.csv(file="Baja2016.csv", header=TRUE, sep=",")
+
+bc$Mes <-  parse_date_time(bc$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+bq1 <-  ggplot() + 
+  geom_line(data = bc, aes(x = Mes, y = Cuartos.Ocupados), color = "Black") +
+  xlab('Mes') +
+  ylab('Cuartos Disponibles') +
+  ggtitle("Cuartos Disponibles en Baja California Sur") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+```{r}
+bq1
+```
+
+
+```{r, include=FALSE}
+bc1 <- read.csv(file="Baja/bc1.csv", header=TRUE, sep=",")
+
+
+bc1$Mes <-  parse_date_time(bc1$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+bq2 <- ggplot(bc1, aes(x = Mes, y = Cuartos.Ocupados)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Cuartos Ocupados") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Cuartos Ocupados por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+```
+
+```{r}
+bq2
+```
+
+La ocupación hotelera en Baja California Sur está claramente dominada por turistas extranjeros. Si bien durante el verano baja se mantiene estable durante todo el año comparado con otros estados que muestran patrones más marcados.
+
+```{r,include=FALSE}
+
+bc2 <- read.csv(file="Baja/bc2.csv", header=TRUE, sep=",")
+
+
+bc2$Mes <-  parse_date_time(bc2$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+bq3 <- ggplot(bc2, aes(x = Mes, y = Llegadas)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Número de arrivos") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Llegada de turistas por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+bq3
+```
+
+Coincidentemente llegan más turistas extranjeros.
+
+```{r, include=FALSE}
+bc3 <- read.csv(file="Baja/bc3.csv", header=TRUE, sep=",")
+
+
+bc3$Mes <-  parse_date_time(bc3$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+bq4 <- ggplot(bc3, aes(x = Mes, y = Promedio)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Promedio") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Promedio de noches por tipo de turista por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+bq4
+```
+
+Sin embargo, la estadía promedio de los turistas que llegan a Baja California Sur es mayor para el grupo extranjero. 
+
+###Guerrero
+
+Vamos a observar las características de Guerrero en 2016 con información del sistema Datatur.
+
+```{r, include=FALSE}
+g <- read.csv(file="Guerrero2016.csv", header=TRUE, sep=",")
+
+g$Mes <-  parse_date_time(g$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+gq1 <-  ggplot() + 
+  geom_line(data = g, aes(x = Mes, y = Cuartos.Ocupados), color = "Black") +
+  xlab('Mes') +
+  ylab('Cuartos Disponibles') +
+  ggtitle("Cuartos Disponibles en Guerrero") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+```{r}
+gq1
+```
+
+
+```{r, include=FALSE}
+g1 <- read.csv(file="Guerrero/g1.csv", header=TRUE, sep=",")
+
+
+g1$Mes <-  parse_date_time(g1$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+gq2 <- ggplot(g1, aes(x = Mes, y = Cuartos.Ocupados)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Cuartos Ocupados") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Cuartos Ocupados por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+```
+
+```{r}
+gq2
+```
+
+La ocupación hotelera en Guerrero está claramente dominada por turistas nacionales.
+
+```{r,include=FALSE}
+
+g2 <- read.csv(file="Guerrero/g2.csv", header=TRUE, sep=",")
+
+
+g2$Mes <-  parse_date_time(g2$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+gq3 <- ggplot(g2, aes(x = Mes, y = Llegadas)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Número de arrivos") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Llegada de turistas por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+gq3
+```
+
+Coincidentemente llegan más turistas nacionales.
+
+```{r, include=FALSE}
+g3 <- read.csv(file="Guerrero/g3.csv", header=TRUE, sep=",")
+
+
+g3$Mes <-  parse_date_time(g3$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+gq4 <- ggplot(g3, aes(x = Mes, y = Promedio)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Promedio") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Promedio de noches por tipo de turista por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+gq4
+```
+
+Sin embargo, la estadía promedio de los turistas que llegan a Guerrero es mayor para el grupo extranjero sobre todo durante el invierno. 
+
+###Nayarit
+
+Vamos a observar las características de Nayarit en 2016 con información del sistema Datatur.
+
+```{r, include=FALSE}
+nay <- read.csv(file="Nayarit2016.csv", header=TRUE, sep=",")
+
+nay$Mes <-  parse_date_time(nay$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+nq1 <-  ggplot() + 
+  geom_line(data = nay, aes(x = Mes, y = Cuartos.Ocupados), color = "Black") +
+  xlab('Mes') +
+  ylab('Cuartos Disponibles') +
+  ggtitle("Cuartos Disponibles en Nayarit") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+```{r}
+nq1
+```
+
+
+```{r, include=FALSE}
+nay1 <- read.csv(file="Nayarit/nay1.csv", header=TRUE, sep=",")
+
+
+nay1$Mes <-  parse_date_time(nay1$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+nq2 <- ggplot(nay1, aes(x = Mes, y = Cuartos.Ocupados)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Cuartos Ocupados") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Cuartos Ocupados por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+```
+
+```{r}
+nq2
+```
+
+La ocupación hotelera en Nayarit ha cambiado en los últimos años, ahora los extranjeros están llegando en mayor medida a la zona.
+
+```{r,include=FALSE}
+
+nay2 <- read.csv(file="Nayarit/nay2.csv", header=TRUE, sep=",")
+
+
+nay2$Mes <-  parse_date_time(nay2$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+nq3 <- ggplot(nay2, aes(x = Mes, y = Llegadas)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Número de arrivos") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Llegada de turistas por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+nq3
+```
+
+Dependiendo de la época del año es la mayor procedencia de turistas.
+
+```{r, include=FALSE}
+nay3 <- read.csv(file="Nayarit/nay3.csv", header=TRUE, sep=",")
+
+
+nay3$Mes <-  parse_date_time(nay3$Mes, orders = c("%m"))
+```
+
+```{r, include=FALSE}
+nq4 <- ggplot(nay3, aes(x = Mes, y = Promedio)) + 
+  geom_line(aes(color = Ocupante), size = 1) +
+  xlab("Mes") + ylab("Promedio") +
+  scale_x_datetime() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(label=scales::comma) + theme(axis.ticks=element_blank()) +
+  theme(legend.key.size =  unit(0.05, "in")) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  ggtitle("Promedio de noches por tipo de turista por mes en 2016") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+nq4
+```
+
+Sin embargo, la estadía promedio de los turistas que llegan a Nayarit es mayor para el grupo extranjero sobre todo durante el invierno. 
+
